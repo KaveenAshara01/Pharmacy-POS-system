@@ -37,4 +37,29 @@ router.put('/:id', async (req, res) => {
 });
 
 
+// GET /distributors - get all distributors
+router.get('/', async (req, res) => {
+  try {
+    const distributors = await Distributor.find();
+    res.json(distributors);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /distributors/:id - get distributor by id
+router.get('/:id', async (req, res) => {
+  try {
+    const distributor = await Distributor.findById(req.params.id);
+    if (!distributor) {
+      return res.status(404).json({ message: 'Distributor not found' });
+    }
+    res.json(distributor);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;
