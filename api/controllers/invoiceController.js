@@ -136,3 +136,27 @@ export const deleteInvoice = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+// GET all invoices for a given distributor (by distributorId in URL)
+export const getInvoicesByDistributor = async (req, res) => {
+  try {
+    const { distributorId } = req.params;
+
+    if (!distributorId) {
+      return res.status(400).json({ message: 'Distributor ID is required' });
+    }
+
+    const invoices = await Invoice.find({ distributor: distributorId })
+      .populate('distributor');
+
+    if (!invoices.length) {
+      return res.status(404).json({ message: 'No invoices found for this distributor' });
+    }
+
+    res.json(invoices);
+  } catch (err) {
+    console.error('getInvoicesByDistributor error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};

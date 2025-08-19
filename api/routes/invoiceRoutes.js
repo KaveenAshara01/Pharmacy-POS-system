@@ -5,7 +5,8 @@ import {
   getInvoices,
   getInvoice,
   updateInvoice,
-  deleteInvoice
+  deleteInvoice,
+  getInvoicesByDistributor
 } from '../controllers/invoiceController.js';
 import { uploadInvoiceImage } from '../middleware/upload.js';
 
@@ -25,5 +26,8 @@ router.put('/:id', uploadInvoiceImage, updateInvoice);
 
 // Delete (also cleans up image)
 router.delete('/:id', deleteInvoice);
+
+// get all invoices for a distributor 
+router.get('/distributor/:distributorId', getInvoicesByDistributor);
 
 export default router;
