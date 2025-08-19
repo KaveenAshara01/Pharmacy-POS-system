@@ -8,6 +8,10 @@ import cors from 'cors';
 
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
+import distributorRoutes from './routes/distributorRoutes.js';
+import invoiceRoutes from './routes/invoiceRoutes.js';
+
+
 
 const app = express();
 
@@ -21,6 +25,9 @@ app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISO
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/distributors', distributorRoutes);
+app.use('/invoices', invoiceRoutes);
+
 
 const port = process.env.PORT || 4000;
 
