@@ -1,4 +1,3 @@
-// models/Invoice.js (ESM)
 import mongoose from 'mongoose';
 
 const productSchema = new mongoose.Schema(
@@ -30,11 +29,10 @@ const invoiceSchema = new mongoose.Schema(
     toPayAmount: { type: Number, default: 0, min: 0 }, // auto-calculated
     products: { type: [productSchema], default: [] },
     invoiceImage: { type: invoiceImageSchema, required: false },
-    toPayDate: { type: Date, required: true },
-    dueDate: { type: Date, required: true },
+
     status: { type: String, enum: ['done', 'topay'], default: 'topay' }
   },
-  { timestamps: true }
+  { timestamps: true } 
 );
 
 // Helper to recalc derived fields
@@ -52,5 +50,17 @@ invoiceSchema.pre('save', function (next) {
   recalc(this);
   next();
 });
+
+// Virtual field: days overdue
+invoiceSchema.virtual('daysOverdue').get(function () {
+  const now = new Date();
+  const created = this.createdAt;
+  const diff = Math.floor((now - created) / (1000 * 60 * 60 * 24)); // in days
+  return diff;
+});
+
+// Ensure virtuals are included in JSON responses
+invoiceSchema.set('toJSON', { virtuals: true });
+invoiceSchema.set('toObject', { virtuals: true });
 
 export const Invoice = mongoose.model('Invoice', invoiceSchema);
