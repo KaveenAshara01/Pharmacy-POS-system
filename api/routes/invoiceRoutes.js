@@ -6,7 +6,9 @@ import {
   getInvoice,
   updateInvoice,
   deleteInvoice,
-  getInvoicesByDistributor
+  getInvoicesByDistributor,
+  getTotalToPayByDistributor,
+  getTotalToPayAll
 } from '../controllers/invoiceController.js';
 import { uploadInvoiceImage } from '../middleware/upload.js';
 
@@ -29,5 +31,11 @@ router.delete('/:id', deleteInvoice);
 
 // get all invoices for a distributor 
 router.get('/distributor/:distributorId', getInvoicesByDistributor);
+
+//get total toPayAmount for a distributor
+router.get('/totals/distributor/:distributorId', getTotalToPayByDistributor);
+
+//get total toPayAmount across all invoices
+router.get('/totals/all', getTotalToPayAll);
 
 export default router;

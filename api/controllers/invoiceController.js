@@ -149,3 +149,46 @@ export const getInvoicesByDistributor = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+
+// TOTAL toPayAmount for a given distributor
+export const getTotalToPayByDistributor = async (req, res) => {
+  try {
+    const { distributorId } = req.params;
+    if (!distributorId) {
+      return res.status(400).json({ message: 'Distributor ID is required' });
+    }
+
+    
+    const invoices = await Invoice.find({ distributor: distributorId });
+    if (!invoices.length) {
+      return res.status(404).json({ message: 'No invoices found for this distributor' });
+    }
+
+   
+    const totalToPay = invoices.reduce((sum, inv) => sum + (inv.toPayAmount || 0), 0);
+
+    res.json({ distributorId, totalToPay });
+  } catch (err) {
+    console.error('getTotalToPayByDistributor error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// TOTAL toPayAmount across all invoices
+export const getTotalToPayAll = async (req, res) => {
+  try {
+    const invoices = await Invoice.find({});
+    if (!invoices.length) {
+      return res.status(404).json({ message: 'No invoices found' });
+    }
+
+    const totalToPay = invoices.reduce((sum, inv) => sum + (inv.toPayAmount || 0), 0);
+
+    res.json({ totalToPay });
+  } catch (err) {
+    console.error('getTotalToPayAll error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
