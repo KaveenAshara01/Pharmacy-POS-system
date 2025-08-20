@@ -1,39 +1,105 @@
-// controllers/invoiceController.js (ESM)
 import { cloudinary } from '../config/cloudinary.js';
 import { Invoice } from '../models/Invoice.js';
+import mongoose from 'mongoose';
 
-// CREATE invoice (image optional - handled by multer/cloudinary)
 // CREATE invoice
 export const createInvoice = async (req, res) => {
   try {
+    // Log incoming request data
+    console.log('createInvoice: Incoming request', {
+      body: req.body,
+      file: req.file,
+      headers: req.headers,
+    });
+
     const {
       distributor,
       amount,
       paidAmount = 0,
-      products = []
+      products
     } = req.body;
 
+    // Validate inputs
     if (!distributor || amount == null) {
+      console.error('createInvoice: Validation failed', { distributor, amount });
       return res.status(400).json({ message: 'distributor and amount are required' });
+    }
+
+    // Validate distributor ObjectId
+    if (!mongoose.Types.ObjectId.isValid(distributor)) {
+      console.error('createInvoice: Invalid distributor ObjectId', { distributor });
+      return res.status(400).json({ message: 'Invalid distributor ID' });
+    }
+
+    // Parse and validate products
+    let parsedProducts = [];
+    if (products) {
+      try {
+        parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
+        if (!Array.isArray(parsedProducts)) {
+          console.error('createInvoice: Products is not an array', { parsedProducts });
+          return res.status(400).json({ message: 'Products must be an array' });
+        }
+        for (const product of parsedProducts) {
+          if (!product.name || typeof product.quantity !== 'number' || typeof product.price !== 'number' || product.quantity < 1 || product.price < 0) {
+            console.error('createInvoice: Invalid product data', { product });
+            return res.status(400).json({ message: 'Invalid product data: name (string), quantity (number, min 1), and price (number, min 0) are required' });
+          }
+        }
+      } catch (e) {
+        console.error('createInvoice: Failed to parse products', { products, error: e.message });
+        return res.status(400).json({ message: 'Invalid products format' });
+      }
+    }
+
+    // Validate amount and paidAmount
+    const parsedAmount = Number(amount);
+    const parsedPaidAmount = Number(paidAmount);
+    if (isNaN(parsedAmount) || parsedAmount < 0) {
+      console.error('createInvoice: Invalid amount', { amount });
+      return res.status(400).json({ message: 'Amount must be a valid number >= 0' });
+    }
+    if (isNaN(parsedPaidAmount) || parsedPaidAmount < 0) {
+      console.error('createInvoice: Invalid paidAmount', { paidAmount });
+      return res.status(400).json({ message: 'Paid amount must be a valid number >= 0' });
     }
 
     let invoiceImage = undefined;
     if (req.file) {
+      console.log('createInvoice: Processing uploaded file', {
+        path: req.file.path,
+        filename: req.file.filename,
+      });
       invoiceImage = { url: req.file.path, publicId: req.file.filename };
     }
 
+    console.log('createInvoice: Creating invoice with data', {
+      distributor,
+      amount: parsedAmount,
+      paidAmount: parsedPaidAmount,
+      products: parsedProducts,
+      invoiceImage,
+    });
+
     const invoice = await Invoice.create({
       distributor,
-      amount,
-      paidAmount,
-      products,
+      amount: parsedAmount,
+      paidAmount: parsedPaidAmount,
+      products: parsedProducts,
       invoiceImage
     });
 
+    console.log('createInvoice: Invoice created successfully', { invoiceId: invoice._id });
+
     res.status(201).json(invoice);
   } catch (err) {
-    console.error('createInvoice error:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error('createInvoice: Error', {
+      message: err.message,
+      stack: err.stack,
+      body: req.body,
+      file: req.file,
+    });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
@@ -78,7 +144,6 @@ export const updateInvoice = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
 
 // READ all (optional filter by distributor)
 export const getInvoices = async (req, res) => {
@@ -126,7 +191,6 @@ export const deleteInvoice = async (req, res) => {
   }
 };
 
-
 // GET all invoices for a given distributor (by distributorId in URL)
 export const getInvoicesByDistributor = async (req, res) => {
   try {
@@ -150,8 +214,6 @@ export const getInvoicesByDistributor = async (req, res) => {
   }
 };
 
-
-
 // TOTAL toPayAmount for a given distributor
 export const getTotalToPayByDistributor = async (req, res) => {
   try {
@@ -160,13 +222,11 @@ export const getTotalToPayByDistributor = async (req, res) => {
       return res.status(400).json({ message: 'Distributor ID is required' });
     }
 
-    
     const invoices = await Invoice.find({ distributor: distributorId });
     if (!invoices.length) {
       return res.status(404).json({ message: 'No invoices found for this distributor' });
     }
 
-   
     const totalToPay = invoices.reduce((sum, inv) => sum + (inv.toPayAmount || 0), 0);
 
     res.json({ distributorId, totalToPay });
