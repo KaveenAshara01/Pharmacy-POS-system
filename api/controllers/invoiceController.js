@@ -89,6 +89,7 @@ export const createInvoice = async (req, res) => {
       invoiceImage
     });
 
+    console.log("invoices", invoice);
     console.log('createInvoice: Invoice created successfully', { invoiceId: invoice._id });
 
     res.status(201).json(invoice);
@@ -173,6 +174,7 @@ export const getInvoices = async (req, res) => {
     const { distributor } = req.query;
     const q = distributor ? { distributor } : {};
     const invoices = await Invoice.find(q).populate('distributor');
+    
     res.json(invoices);
   } catch (err) {
     console.error('getInvoices error:', err);
