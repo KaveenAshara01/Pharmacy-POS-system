@@ -117,10 +117,32 @@ export const updateInvoice = async (req, res) => {
       products
     } = req.body;
 
+    // Parse and validate products
+    let parsedProducts = invoice.products; // Preserve existing products by default
+    if (products !== undefined) {
+      try {
+        parsedProducts = typeof products === 'string' ? JSON.parse(products) : products;
+        if (!Array.isArray(parsedProducts)) {
+          console.error('updateInvoice: Products is not an array', { parsedProducts });
+          return res.status(400).json({ message: 'Products must be an array' });
+        }
+        for (const product of parsedProducts) {
+          if (!product.name || typeof product.quantity !== 'number' || typeof product.price !== 'number' || product.quantity < 1 || product.price < 0) {
+            console.error('updateInvoice: Invalid product data', { product });
+            return res.status(400).json({ message: 'Invalid product data: name (string), quantity (number, min 1), and price (number, min 0) are required' });
+          }
+        }
+      } catch (e) {
+        console.error('updateInvoice: Failed to parse products', { products, error: e.message });
+        return res.status(400).json({ message: 'Invalid products format' });
+      }
+    }
+
+    // Update fields if provided
     if (distributor !== undefined) invoice.distributor = distributor;
     if (amount !== undefined) invoice.amount = Number(amount);
     if (paidAmount !== undefined) invoice.paidAmount = Number(paidAmount);
-    if (products !== undefined) invoice.products = products;
+    invoice.products = parsedProducts;
 
     if (req.file) {
       const old = invoice.invoiceImage;
@@ -141,7 +163,7 @@ export const updateInvoice = async (req, res) => {
     res.json(invoice);
   } catch (err) {
     console.error('updateInvoice error:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
