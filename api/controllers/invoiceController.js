@@ -16,7 +16,8 @@ export const createInvoice = async (req, res) => {
       distributor,
       amount,
       paidAmount = 0,
-      products
+      products,
+      invoiceNumber
     } = req.body;
 
     // Validate inputs
@@ -86,7 +87,8 @@ export const createInvoice = async (req, res) => {
       amount: parsedAmount,
       paidAmount: parsedPaidAmount,
       products: parsedProducts,
-      invoiceImage
+      invoiceImage,
+      invoiceNumber: invoiceNumber || undefined
     });
 
     console.log("invoices", invoice);
@@ -115,7 +117,8 @@ export const updateInvoice = async (req, res) => {
       distributor,
       amount,
       paidAmount,
-      products
+      products,
+      invoiceNumber
     } = req.body;
 
     // Parse and validate products
@@ -143,6 +146,7 @@ export const updateInvoice = async (req, res) => {
     if (distributor !== undefined) invoice.distributor = distributor;
     if (amount !== undefined) invoice.amount = Number(amount);
     if (paidAmount !== undefined) invoice.paidAmount = Number(paidAmount);
+    if (invoiceNumber !== undefined) invoice.invoiceNumber = invoiceNumber;
     invoice.products = parsedProducts;
 
     if (req.file) {

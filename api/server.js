@@ -10,6 +10,7 @@ import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import distributorRoutes from './routes/distributorRoutes.js';
 import invoiceRoutes from './routes/invoiceRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 
 
@@ -27,6 +28,8 @@ app.get('/health', (req, res) => res.json({ status: 'ok', time: new Date().toISO
 app.use('/auth', authRoutes);
 app.use('/distributors', distributorRoutes);
 app.use('/invoices', invoiceRoutes);
+app.use('/payments', paymentRoutes);
+
 
 
 const port = process.env.PORT || 4000;
