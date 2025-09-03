@@ -116,7 +116,7 @@ export const updateInvoice = async (req, res) => {
     const {
       distributor,
       amount,
-      paidAmount,
+      //paidAmount,
       products,
       invoiceNumber
     } = req.body;
@@ -145,7 +145,7 @@ export const updateInvoice = async (req, res) => {
     // Update fields if provided
     if (distributor !== undefined) invoice.distributor = distributor;
     if (amount !== undefined) invoice.amount = Number(amount);
-    if (paidAmount !== undefined) invoice.paidAmount = Number(paidAmount);
+    //if (paidAmount !== undefined) invoice.paidAmount = Number(paidAmount);
     if (invoiceNumber !== undefined) invoice.invoiceNumber = invoiceNumber;
     invoice.products = parsedProducts;
 
