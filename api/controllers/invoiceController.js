@@ -8,6 +8,8 @@ import { Payment } from '../models/Payment.js';
 import { Distributor } from '../models/Distributor.js';
 
 
+
+
 // CREATE invoice
 export const createInvoice = async (req, res) => {
   try {
@@ -293,24 +295,74 @@ export const getInvoice = async (req, res) => {
   }
 };
 
-// DELETE (also cleanup Cloudinary image if present)
+// // DELETE (also cleanup Cloudinary image if present)
+// export const deleteInvoice = async (req, res) => {
+//   try {
+//     const invoice = await Invoice.findByIdAndDelete(req.params.id);
+//     if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+
+//     if (invoice.invoiceImage?.publicId) {
+//       try {
+//         await cloudinary.uploader.destroy(invoice.invoiceImage.publicId);
+//       } catch (e) {
+//         console.warn('Failed to delete Cloudinary image on invoice delete:', e?.message || e);
+//       }
+//     }
+
+//     res.json({ message: 'Invoice deleted' });
+//   } catch (err) {
+//     console.error('deleteInvoice error:', err);
+//     res.status(500).json({ message: 'Server error' });
+//   }
+// };
+
+
+
+
+// DELETE (with payment check + Cloudinary cleanup)
 export const deleteInvoice = async (req, res) => {
   try {
-    const invoice = await Invoice.findByIdAndDelete(req.params.id);
-    if (!invoice) return res.status(404).json({ message: 'Invoice not found' });
+    const { id } = req.params;
 
+    // Find invoice first
+    const invoice = await Invoice.findById(id);
+    if (!invoice) {
+      return res.status(404).json({ message: 'Invoice not found' });
+    }
+
+    // Check payments for this invoice
+    const payments = await Payment.find({ invoice: id });
+
+    if (payments.length > 1) {
+      return res.status(400).json({ 
+        message: 'Cannot delete invoice with more than one payment record' 
+      });
+    }
+
+    if (payments.length === 1) {
+      // Delete the payment
+      await Payment.findByIdAndDelete(payments[0]._id);
+    }
+
+    // Delete invoice
+    await Invoice.findByIdAndDelete(id);
+
+    // Delete Cloudinary image if exists
     if (invoice.invoiceImage?.publicId) {
       try {
         await cloudinary.uploader.destroy(invoice.invoiceImage.publicId);
       } catch (e) {
-        console.warn('Failed to delete Cloudinary image on invoice delete:', e?.message || e);
+        console.warn(
+          'Failed to delete Cloudinary image on invoice delete:',
+          e?.message || e
+        );
       }
     }
 
-    res.json({ message: 'Invoice deleted' });
+    return res.json({ message: 'Invoice deleted successfully' });
   } catch (err) {
     console.error('deleteInvoice error:', err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
 
