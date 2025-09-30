@@ -23,7 +23,8 @@ export const createInvoice = async (req, res) => {
       amount,
       paidAmount = 0,
       products,
-      invoiceNumber
+      invoiceNumber,
+      createdAt
     } = req.body;
 
     if (!distributor || amount == null) {
@@ -58,15 +59,27 @@ export const createInvoice = async (req, res) => {
       invoiceImage = { url: req.file.path, publicId: req.file.filename };
     }
 
-    // ✅ Create the invoice
-    const invoice = await Invoice.create({
+    // Prepare invoice data
+    const invoiceData = {
       distributor,
       amount: parsedAmount,
       paidAmount: parsedPaidAmount,
       products: parsedProducts,
       invoiceImage,
       invoiceNumber: invoiceNumber || undefined
-    });
+    };
+
+    // Add createdAt if provided by user
+    if (createdAt) {
+      const parsedCreatedAt = new Date(createdAt);
+      if (isNaN(parsedCreatedAt.getTime())) {
+        return res.status(400).json({ message: 'Invalid createdAt date format' });
+      }
+      invoiceData.createdAt = parsedCreatedAt;
+    }
+
+    // ✅ Create the invoice
+    const invoice = await Invoice.create(invoiceData);
 
     let payment = null;
 
@@ -215,7 +228,8 @@ export const updateInvoice = async (req, res) => {
       amount,
       //paidAmount,
       products,
-      invoiceNumber
+      invoiceNumber,
+      createdAt
     } = req.body;
 
     // Parse and validate products
@@ -244,6 +258,13 @@ export const updateInvoice = async (req, res) => {
     if (amount !== undefined) invoice.amount = Number(amount);
     //if (paidAmount !== undefined) invoice.paidAmount = Number(paidAmount);
     if (invoiceNumber !== undefined) invoice.invoiceNumber = invoiceNumber;
+    if (createdAt !== undefined) {
+      const parsedCreatedAt = new Date(createdAt);
+      if (isNaN(parsedCreatedAt.getTime())) {
+        return res.status(400).json({ message: 'Invalid createdAt date format' });
+      }
+      invoice.createdAt = parsedCreatedAt;
+    }
     invoice.products = parsedProducts;
 
     if (req.file) {

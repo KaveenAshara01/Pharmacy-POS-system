@@ -100,10 +100,12 @@ const invoiceSchema = new mongoose.Schema(
     toPayAmount: { type: Number, default: 0, min: 0 }, // auto-calculated
     products: { type: [productSchema], default: [] },
     invoiceImage: { type: invoiceImageSchema, required: false },
-
+    createdAt: { type: Date, default: Date.now }, // Custom createdAt field
     status: { type: String, enum: ['done', 'topay'], default: 'topay' }
   },
-  { timestamps: true }
+  { 
+    timestamps: { updatedAt: true, createdAt: false } // Only auto-manage updatedAt
+  }
 );
 
 // Helper to recalc derived fields
@@ -116,8 +118,13 @@ function recalc(invoice) {
   invoice.status = remaining <= 0 ? 'done' : 'topay';
 }
 
-// Recalculate on save
+// Recalculate on save and handle custom createdAt
 invoiceSchema.pre('save', function (next) {
+  // If this is a new document and no createdAt is provided, use current date
+  if (this.isNew && !this.createdAt) {
+    this.createdAt = new Date();
+  }
+  
   recalc(this);
   next();
 });
